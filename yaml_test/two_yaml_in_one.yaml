@@ -1,0 +1,6 @@
+object_name: test1
+type: string
+
+---
+object_name: test2
+type: string

@@ -49,3 +49,16 @@ yet_another_multi_line_field: >
   are
   red
   violets are not really blue?
+
+# You can also use enviromnental variable //Not working in windows for some reasons
+localhost_username: ${USERDOMAIN}\${USERNAME}
+
+# Placeholders (e.g. Ansible)
+#name: {{ .Values.username }}
+
+# ---
+# This will be another new yaml file
+#
+#another_object_in_new_yaml_file:
+#  - object_name: new_object
+#""""
