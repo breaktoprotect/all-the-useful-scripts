@@ -1,7 +1,7 @@
 """
 Author  : Jeremy Soh @breaktoprotect
 Date    : 14 May 2022
-What    : Test yaml in python
+What    : Test yaml in python. Run the code to see what your YAML is like in Python dict
 """
 import yaml
 
