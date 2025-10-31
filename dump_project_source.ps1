@@ -1,31 +1,43 @@
+# dump_godot.ps1
+
 $OutputFile = "z_whole_code_dump.txt"
-$includeExt = @("*.gd", "*.tscn", "*.cs", "*.md", "*.txt", "project.godot")
+$Here       = Get-Location
 
-# folders to exclude
-$excludeDirs = @(
-    ".godot",     # editor cache & metadata
-    ".import",    # texture import cache
-    "imported",  
-    "shader_cache"
-)
+# include only what matters for Godot scripts/scenes
+$includeNameRegex = '(?i)\.(gd|tscn)$|^project\.godot$'
 
-# Start file fresh
-"===== PROJECT TREE (clean) =====" | Set-Content $OutputFile
+# exclude engine/editor/generated folders
+$excludeRegex = '(?i)(\\|/)\.godot(\\|/|$)|(\\|/)\.import(\\|/|$)|(\\|/)imported(\\|/|$)|(\\|/)shader_cache(\\|/|$)'
 
-# Custom tree excluding noise
-Get-ChildItem -Recurse -Directory | Where-Object {
-    $excludeDirs -notcontains $_.Name
-} | Select-Object FullName | Out-File -Append $OutputFile
+# prepare output
+if (Test-Path $OutputFile) { Remove-Item $OutputFile }
+function W([string]$s){ $s | Out-File $OutputFile -Append -Encoding utf8 }
 
-"`n===== FILE DUMPS =====" | Add-Content $OutputFile
+# find matching files
+$files = Get-ChildItem -Recurse -File | Where-Object {
+    -not ($_.FullName -match $excludeRegex) -and
+    ($_.Name -match $includeNameRegex)
+} | Sort-Object FullName
 
-Get-ChildItem -Recurse -File | Where-Object {
-    ($includeExt | ForEach-Object { $_ -like "*$($_.Extension)" }) -contains $true -and
-    ($excludeDirs | ForEach-Object { $_ -notmatch $_.FullName }) -contains $true
-} | Sort-Object FullName | ForEach-Object {
-    "===== FILE: $($_.FullName) =====" | Add-Content $OutputFile
-    Get-Content $_.FullName | Add-Content $OutputFile
-    "`n" | Add-Content $OutputFile
+# collect dirs containing those files
+$dirs = $files | ForEach-Object {
+    Split-Path $_.FullName -Parent
+} | Sort-Object -Unique
+
+# write clean tree
+W "===== PROJECT TREE (clean) ====="
+foreach($d in $dirs){
+    $rel = $d.Replace($Here.Path + [IO.Path]::DirectorySeparatorChar, "")
+    W $rel
 }
 
-Write-Host "✅ Minimal project dump saved to $OutputFile"
+W "`n===== FILE DUMPS =====`n"
+
+foreach($f in $files){
+    $rel = $f.FullName.Replace($Here.Path + [IO.Path]::DirectorySeparatorChar, "")
+    W "===== FILE: $rel ====="
+    Get-Content $f.FullName -Raw -Encoding UTF8 | Out-File $OutputFile -Append -Encoding utf8
+    W "`n"
+}
+
+Write-Host "✅ Godot code dump completed → $OutputFile"
