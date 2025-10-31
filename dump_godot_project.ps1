@@ -1,6 +1,6 @@
 # dump_godot.ps1
 
-$OutputFile = "z_whole_code_dump.txt"
+$OutputFile = "zz_whole_code_dump.txt"
 $Here       = Get-Location
 
 # include only what matters for Godot scripts/scenes
