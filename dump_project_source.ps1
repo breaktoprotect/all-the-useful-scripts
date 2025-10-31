@@ -1,21 +1,31 @@
-# dump_project_source.ps1
 $OutputFile = "z_whole_code_dump.txt"
+$includeExt = @("*.gd", "*.tscn", "*.cs", "*.md", "*.txt", "project.godot")
 
-Add-Content $OutputFile "===== PROJECT TREE ====="
-tree /F /A | Add-Content $OutputFile
+# folders to exclude
+$excludeDirs = @(
+    ".godot",     # editor cache & metadata
+    ".import",    # texture import cache
+    "imported",  
+    "shader_cache"
+)
 
-Add-Content $OutputFile "`n===== FILE DUMPS ====="
+# Start file fresh
+"===== PROJECT TREE (clean) =====" | Set-Content $OutputFile
 
-$extensions = @("*.gd","*.tscn","*.cs","*.py","*.csv","Pipfile","*.md")
+# Custom tree excluding noise
+Get-ChildItem -Recurse -Directory | Where-Object {
+    $excludeDirs -notcontains $_.Name
+} | Select-Object FullName | Out-File -Append $OutputFile
+
+"`n===== FILE DUMPS =====" | Add-Content $OutputFile
 
 Get-ChildItem -Recurse -File | Where-Object {
-    $ext = $_.Name
-    ($extensions | ForEach-Object { $_ -like "*$ext" }) -contains $true -and
-    $_.Name -ne "Pipfile.lock"
+    ($includeExt | ForEach-Object { $_ -like "*$($_.Extension)" }) -contains $true -and
+    ($excludeDirs | ForEach-Object { $_ -notmatch $_.FullName }) -contains $true
 } | Sort-Object FullName | ForEach-Object {
-    Add-Content $OutputFile "===== FILE: $($_.FullName) ====="
+    "===== FILE: $($_.FullName) =====" | Add-Content $OutputFile
     Get-Content $_.FullName | Add-Content $OutputFile
-    Add-Content $OutputFile "`n"
+    "`n" | Add-Content $OutputFile
 }
 
-Write-Host "✅ Project dumped to $OutputFile"
+Write-Host "✅ Minimal project dump saved to $OutputFile"
